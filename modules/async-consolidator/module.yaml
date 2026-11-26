@@ -1,0 +1,45 @@
+apiVersion: module/v1
+kind: Module
+metadata:
+  id: async-consolidator
+  name: 异步巩固器
+  description: 持久化巩固作业、边权更新、遗忘、枢纽蒸馏、死信与重放
+  version: 0.1.0
+  kind: backend
+  owner: hla-mem-core
+  maintainers:
+  - core
+compatibility:
+  host: '>=0.1.0 <1.0.0'
+entrypoints:
+  apiBasePath: /api/async-consolidator/v1
+  healthPath: /internal/health
+  readinessPath: /internal/ready
+  metricsPath: /internal/metrics
+provides:
+  capabilities:
+  - async-consolidator.job.enqueue.v1
+  - async-consolidator.job.read.v1
+  - async-consolidator.job.retry.v1
+  - async-consolidator.deadletter.read.v1
+  - async-consolidator.deadletter.replay.v1
+  - async-consolidator.backlog.read.v1
+  events:
+  - async-consolidator.job.completed.v1
+  - async-consolidator.job.failed.v1
+  - async-consolidator.job.deadlettered.v1
+  - async-consolidator.edge.reinforced.v1
+  - async-consolidator.hub.distilled.v1
+requires:
+  mandatory:
+  - host.auth.identity.v1
+  - host.config.v1
+  - host.event.bus.v1
+  optional:
+  - memory-graph.consolidation.apply.v1
+  - persona-state.adaptation.update.v1
+  - persona-state.proposal.create.v1
+contracts:
+  openapi: contracts/openapi.yaml
+  events: contracts/events
+  permissions: contracts/permissions.yaml

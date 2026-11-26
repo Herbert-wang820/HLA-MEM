@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hla-mem.dev/events/reasoning-orchestrator.turn.processed.v1.schema.json",
+  "title": "reasoning-orchestrator.turn.processed.v1",
+  "$comment": "Envelope fields are checked by schemas/event-envelope.schema.json; this schema constrains type + data.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "data"
+  ],
+  "properties": {
+    "type": {
+      "const": "reasoning-orchestrator.turn.processed.v1"
+    },
+    "data": {
+      "$ref": "#/$defs/data"
+    }
+  },
+  "$defs": {
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "turnId",
+        "sessionId",
+        "path",
+        "gateDecision",
+        "latencyMs",
+        "degradedFlags",
+        "memoryRefs",
+        "personaVersion"
+      ],
+      "properties": {
+        "turnId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "sessionId": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string",
+          "enum": [
+            "fast",
+            "slow"
+          ]
+        },
+        "gateDecision": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "route",
+            "confidence",
+            "reasonCode"
+          ],
+          "properties": {
+            "route": {
+              "type": "string",
+              "enum": [
+                "fast",
+                "slow"
+              ]
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "reasonCode": {
+              "type": "string"
+            }
+          }
+        },
+        "latencyMs": {
+          "type": "number",
+          "minimum": 0
+        },
+        "degradedFlags": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "memoryDegraded",
+            "personaDegraded",
+            "llmDegraded",
+            "reasons"
+          ],
+          "properties": {
+            "memoryDegraded": {
+              "type": "boolean"
+            },
+            "personaDegraded": {
+              "type": "boolean"
+            },
+            "llmDegraded": {
+              "type": "boolean"
+            },
+            "reasons": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "memoryRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "personaVersion": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

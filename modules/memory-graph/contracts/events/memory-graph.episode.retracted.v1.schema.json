@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hla-mem.dev/events/memory-graph.episode.retracted.v1.schema.json",
+  "title": "memory-graph.episode.retracted.v1",
+  "$comment": "Envelope fields are checked by schemas/event-envelope.schema.json; this schema constrains type + data.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "data"
+  ],
+  "properties": {
+    "type": {
+      "const": "memory-graph.episode.retracted.v1"
+    },
+    "data": {
+      "$ref": "#/$defs/data"
+    }
+  },
+  "$defs": {
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "episodeId",
+        "retractedAt",
+        "reasonCode"
+      ],
+      "properties": {
+        "episodeId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "retractedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reasonCode": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

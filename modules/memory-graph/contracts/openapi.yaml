@@ -1,0 +1,1243 @@
+openapi: 3.1.0
+info:
+  title: HLA-MEM 记忆图
+  description: 情景与概念图存储、双路径检索、共激活事件与检索审计
+  version: 0.1.0
+paths:
+  /internal/health:
+    get:
+      tags:
+      - operations
+      summary: Liveness probe
+      operationId: health_internal_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /internal/ready:
+    get:
+      tags:
+      - operations
+      summary: Readiness probe
+      operationId: ready_internal_ready_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+        '503':
+          description: A dependency or required configuration is not ready.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+  /internal/metrics:
+    get:
+      tags:
+      - operations
+      summary: Prometheus metrics
+      operationId: metrics_endpoint_internal_metrics_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            text/plain:
+              schema:
+                type: string
+  /api/memory-graph/v1/episodes:
+    post:
+      tags:
+      - episodes
+      summary: 写入不可变情景节点
+      operationId: write_episode_api_memory_graph_v1_episodes_post
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Stable key for this non-idempotent operation.
+          title: Idempotency-Key
+        description: Stable key for this non-idempotent operation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EpisodeWriteRequest'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Episode'
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: memory-graph.episode.write.v1
+      x-permission: memory-graph.episode.write
+  /api/memory-graph/v1/episodes/{episode_id}:
+    get:
+      tags:
+      - episodes
+      summary: 读取单个情景节点
+      operationId: read_episode_api_memory_graph_v1_episodes__episode_id__get
+      parameters:
+      - name: episode_id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 64
+          title: Episode Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Episode'
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: memory-graph.episode.read.v1
+      x-permission: memory-graph.episode.read
+  /api/memory-graph/v1/episodes/{episode_id}/retract:
+    post:
+      tags:
+      - episodes
+      summary: 追加撤回标记（不修改原文）
+      operationId: retract_episode_api_memory_graph_v1_episodes__episode_id__retract_post
+      parameters:
+      - name: episode_id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 64
+          title: Episode Id
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Stable key for this non-idempotent operation.
+          title: Idempotency-Key
+        description: Stable key for this non-idempotent operation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EpisodeRetractRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Episode'
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: memory-graph.episode.retract.v1
+      x-permission: memory-graph.episode.write
+  /api/memory-graph/v1/retrievals:
+    post:
+      tags:
+      - episodes
+      summary: 双路径检索（语义 + 扩散）
+      operationId: retrieve_api_memory_graph_v1_retrievals_post
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Stable key for this non-idempotent operation.
+          title: Idempotency-Key
+        description: Stable key for this non-idempotent operation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RetrievalRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetrievalResult'
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: memory-graph.episode.retrieve.v1
+      x-permission: memory-graph.episode.read
+  /api/memory-graph/v1/retrievals/{retrieval_id}:
+    get:
+      tags:
+      - episodes
+      summary: 读取检索审计记录
+      operationId: read_retrieval_api_memory_graph_v1_retrievals__retrieval_id__get
+      parameters:
+      - name: retrieval_id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 64
+          title: Retrieval Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetrievalResult'
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: memory-graph.retrieval.read.v1
+      x-permission: memory-graph.retrieval.read
+  /internal/v1/graph/query:
+    post:
+      tags:
+      - admin
+      summary: 管理端受限只读图查询
+      operationId: query_graph_internal_v1_graph_query_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphQueryRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphQueryResult'
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: memory-graph.graph.read.v1
+      x-permission: memory-graph.admin.read
+  /internal/v1/consolidation/apply:
+    post:
+      tags:
+      - admin
+      summary: 应用共激活边权/遗忘/蒸馏批次
+      operationId: apply_consolidation_internal_v1_consolidation_apply_post
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Stable key for this non-idempotent operation.
+          title: Idempotency-Key
+        description: Stable key for this non-idempotent operation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsolidationApplyRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsolidationApplyResult'
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: memory-graph.consolidation.apply.v1
+      x-permission: memory-graph.consolidation.write
+components:
+  schemas:
+    CheckResult:
+      properties:
+        name:
+          type: string
+          title: Name
+        ready:
+          type: boolean
+          title: Ready
+        detail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Detail
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      - ready
+      title: CheckResult
+    ConsolidationApplyRequest:
+      properties:
+        batchId:
+          type: string
+          maxLength: 128
+          minLength: 1
+          title: Batchid
+        jobId:
+          type: string
+          maxLength: 128
+          minLength: 1
+          title: Jobid
+        operations:
+          items:
+            $ref: '#/components/schemas/ConsolidationOperation'
+          type: array
+          maxItems: 5000
+          minItems: 1
+          title: Operations
+      additionalProperties: false
+      type: object
+      required:
+      - batchId
+      - jobId
+      - operations
+      title: ConsolidationApplyRequest
+    ConsolidationApplyResult:
+      properties:
+        batchId:
+          type: string
+          title: Batchid
+        appliedCount:
+          type: integer
+          minimum: 0.0
+          title: Appliedcount
+        skippedCount:
+          type: integer
+          minimum: 0.0
+          title: Skippedcount
+        maxWeight:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Maxweight
+      additionalProperties: false
+      type: object
+      required:
+      - batchId
+      - appliedCount
+      - skippedCount
+      - maxWeight
+      title: ConsolidationApplyResult
+    ConsolidationOperation:
+      properties:
+        operation:
+          type: string
+          enum:
+          - reinforce
+          - forget
+          - distill
+          title: Operation
+        edgeId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Edgeid
+        sourceEpisodeId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Sourceepisodeid
+        targetEpisodeId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Targetepisodeid
+        episodeId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Episodeid
+        weightDelta:
+          anyOf:
+          - type: number
+            maximum: 1.0
+            minimum: 0.0
+          - type: 'null'
+          title: Weightdelta
+        hubId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Hubid
+      additionalProperties: false
+      type: object
+      required:
+      - operation
+      title: ConsolidationOperation
+    Episode:
+      properties:
+        episodeId:
+          type: string
+          title: Episodeid
+        tenantId:
+          type: string
+          title: Tenantid
+        sessionId:
+          type: string
+          title: Sessionid
+        content:
+          type: string
+          title: Content
+        occurredAt:
+          type: string
+          format: date-time
+          title: Occurredat
+        source:
+          type: string
+          title: Source
+        metadata:
+          additionalProperties:
+            type: string
+          type: object
+          title: Metadata
+        contentHash:
+          type: string
+          title: Contenthash
+        retracted:
+          type: boolean
+          title: Retracted
+          default: false
+        retractedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Retractedat
+        retractReason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Retractreason
+        createdAt:
+          type: string
+          format: date-time
+          title: Createdat
+      additionalProperties: false
+      type: object
+      required:
+      - episodeId
+      - tenantId
+      - sessionId
+      - content
+      - occurredAt
+      - source
+      - contentHash
+      - createdAt
+      title: Episode
+    EpisodeRetractRequest:
+      properties:
+        reasonCode:
+          type: string
+          maxLength: 64
+          minLength: 1
+          title: Reasoncode
+        note:
+          anyOf:
+          - type: string
+            maxLength: 1000
+          - type: 'null'
+          title: Note
+      additionalProperties: false
+      type: object
+      required:
+      - reasonCode
+      title: EpisodeRetractRequest
+    EpisodeWriteRequest:
+      properties:
+        sessionId:
+          type: string
+          maxLength: 128
+          minLength: 1
+          title: Sessionid
+        content:
+          type: string
+          maxLength: 20000
+          minLength: 1
+          title: Content
+        occurredAt:
+          type: string
+          format: date-time
+          title: Occurredat
+        source:
+          type: string
+          maxLength: 64
+          minLength: 1
+          title: Source
+          default: conversation
+        metadata:
+          additionalProperties:
+            type: string
+          type: object
+          title: Metadata
+      additionalProperties: false
+      type: object
+      required:
+      - sessionId
+      - content
+      - occurredAt
+      title: EpisodeWriteRequest
+    ErrorResponse:
+      properties:
+        code:
+          type: string
+          pattern: ^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+$
+          title: Code
+        message:
+          type: string
+          title: Message
+        requestId:
+          type: string
+          title: Requestid
+        details:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Details
+      additionalProperties: false
+      type: object
+      required:
+      - code
+      - message
+      - requestId
+      title: ErrorResponse
+    GraphEdge:
+      properties:
+        edgeId:
+          type: string
+          title: Edgeid
+        sourceId:
+          type: string
+          title: Sourceid
+        targetId:
+          type: string
+          title: Targetid
+        weight:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Weight
+      additionalProperties: false
+      type: object
+      required:
+      - edgeId
+      - sourceId
+      - targetId
+      - weight
+      title: GraphEdge
+    GraphNode:
+      properties:
+        nodeId:
+          type: string
+          title: Nodeid
+        nodeType:
+          type: string
+          enum:
+          - episode
+          - concept
+          title: Nodetype
+        label:
+          type: string
+          title: Label
+        degree:
+          type: integer
+          minimum: 0.0
+          title: Degree
+      additionalProperties: false
+      type: object
+      required:
+      - nodeId
+      - nodeType
+      - label
+      - degree
+      title: GraphNode
+    GraphQueryRequest:
+      properties:
+        nodeTypes:
+          items:
+            type: string
+          type: array
+          maxItems: 10
+          minItems: 1
+          title: Nodetypes
+        filters:
+          additionalProperties:
+            type: string
+          type: object
+          title: Filters
+        depth:
+          type: integer
+          maximum: 3.0
+          minimum: 0.0
+          title: Depth
+          default: 1
+        limit:
+          type: integer
+          maximum: 500.0
+          minimum: 1.0
+          title: Limit
+          default: 100
+      additionalProperties: false
+      type: object
+      required:
+      - nodeTypes
+      title: GraphQueryRequest
+    GraphQueryResult:
+      properties:
+        nodes:
+          items:
+            $ref: '#/components/schemas/GraphNode'
+          type: array
+          title: Nodes
+        edges:
+          items:
+            $ref: '#/components/schemas/GraphEdge'
+          type: array
+          title: Edges
+        truncated:
+          type: boolean
+          title: Truncated
+          default: false
+      additionalProperties: false
+      type: object
+      required:
+      - nodes
+      - edges
+      title: GraphQueryResult
+    HealthResponse:
+      properties:
+        status:
+          type: string
+          const: ok
+          title: Status
+          default: ok
+        module:
+          type: string
+          title: Module
+        version:
+          type: string
+          title: Version
+        time:
+          type: string
+          format: date-time
+          title: Time
+      additionalProperties: false
+      type: object
+      required:
+      - module
+      - version
+      - time
+      title: HealthResponse
+    ReadinessResponse:
+      properties:
+        status:
+          type: string
+          enum:
+          - ready
+          - not_ready
+          title: Status
+        module:
+          type: string
+          title: Module
+        checks:
+          items:
+            $ref: '#/components/schemas/CheckResult'
+          type: array
+          title: Checks
+        time:
+          type: string
+          format: date-time
+          title: Time
+      additionalProperties: false
+      type: object
+      required:
+      - status
+      - module
+      - checks
+      - time
+      title: ReadinessResponse
+    RetrievalCandidate:
+      properties:
+        episodeId:
+          type: string
+          title: Episodeid
+        score:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Score
+        sources:
+          items:
+            type: string
+            enum:
+            - semantic
+            - spreading
+          type: array
+          minItems: 1
+          title: Sources
+        hopCount:
+          anyOf:
+          - type: integer
+            minimum: 0.0
+          - type: 'null'
+          title: Hopcount
+      additionalProperties: false
+      type: object
+      required:
+      - episodeId
+      - score
+      - sources
+      title: RetrievalCandidate
+    RetrievalRequest:
+      properties:
+        query:
+          type: string
+          maxLength: 8000
+          minLength: 1
+          title: Query
+        topK:
+          type: integer
+          maximum: 50.0
+          minimum: 1.0
+          title: Topk
+          default: 50
+        semanticTopK:
+          type: integer
+          maximum: 50.0
+          minimum: 1.0
+          title: Semantictopk
+          default: 20
+        spreadingTopK:
+          type: integer
+          maximum: 50.0
+          minimum: 1.0
+          title: Spreadingtopk
+          default: 20
+        sessionId:
+          anyOf:
+          - type: string
+            maxLength: 128
+          - type: 'null'
+          title: Sessionid
+        asOf:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Asof
+      additionalProperties: false
+      type: object
+      required:
+      - query
+      title: RetrievalRequest
+    RetrievalResult:
+      properties:
+        retrievalId:
+          type: string
+          title: Retrievalid
+        tenantId:
+          type: string
+          title: Tenantid
+        candidates:
+          items:
+            $ref: '#/components/schemas/RetrievalCandidate'
+          type: array
+          title: Candidates
+        mergedTopK:
+          type: integer
+          maximum: 50.0
+          minimum: 0.0
+          title: Mergedtopk
+        latencyMs:
+          type: number
+          minimum: 0.0
+          title: Latencyms
+        degraded:
+          type: boolean
+          title: Degraded
+          default: false
+        degradationReasons:
+          items:
+            type: string
+          type: array
+          title: Degradationreasons
+      additionalProperties: false
+      type: object
+      required:
+      - retrievalId
+      - tenantId
+      - candidates
+      - mergedTopK
+      - latencyMs
+      title: RetrievalResult

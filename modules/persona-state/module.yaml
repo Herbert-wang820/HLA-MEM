@@ -1,0 +1,47 @@
+apiVersion: module/v1
+kind: Module
+metadata:
+  id: persona-state
+  name: 人格状态
+  description: 身份层版本化、适应层有界更新、经历日志与身份变更提案
+  version: 0.1.0
+  kind: backend
+  owner: hla-mem-core
+  maintainers:
+  - core
+compatibility:
+  host: '>=0.1.0 <1.0.0'
+entrypoints:
+  apiBasePath: /api/persona-state/v1
+  healthPath: /internal/health
+  readinessPath: /internal/ready
+  metricsPath: /internal/metrics
+provides:
+  capabilities:
+  - persona-state.identity.read.v1
+  - persona-state.identity.version.create.v1
+  - persona-state.identity.rollback.v1
+  - persona-state.adaptation.read.v1
+  - persona-state.adaptation.update.v1
+  - persona-state.proposal.create.v1
+  - persona-state.proposal.read.v1
+  - persona-state.proposal.review.v1
+  - persona-state.experience.append.v1
+  - persona-state.experience.read.v1
+  events:
+  - persona-state.identity.versioned.v1
+  - persona-state.identity.rolled-back.v1
+  - persona-state.adaptation.updated.v1
+  - persona-state.proposal.created.v1
+  - persona-state.proposal.reviewed.v1
+  - persona-state.experience.appended.v1
+requires:
+  mandatory:
+  - host.auth.identity.v1
+  - host.config.v1
+  - host.event.bus.v1
+  optional: []
+contracts:
+  openapi: contracts/openapi.yaml
+  events: contracts/events
+  permissions: contracts/permissions.yaml

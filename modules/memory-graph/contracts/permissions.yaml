@@ -1,0 +1,19 @@
+apiVersion: permissions/v1
+kind: PermissionSet
+module: memory-graph
+permissions:
+- id: memory-graph.episode.read
+  description: 读取单个情景节点
+  kind: query
+- id: memory-graph.episode.write
+  description: 写入情景节点与追加撤回标记
+  kind: write
+- id: memory-graph.retrieval.read
+  description: 读取双路径检索审计记录
+  kind: query
+- id: memory-graph.consolidation.write
+  description: 应用共激活边权/遗忘/蒸馏批次（巩固器内部调用）
+  kind: write
+- id: memory-graph.admin.read
+  description: 管理端受限只读图查询
+  kind: admin

@@ -1,0 +1,16 @@
+apiVersion: menu/v1
+kind: Menu
+module: conversation-web
+menus:
+- id: conversation
+  name: 对话
+  icon: chat
+  order: 100
+  route: /conversation
+  requiredCapability: reasoning-orchestrator.turn.process.v1
+  permission: conversation-web.chat.use
+  children:
+  - id: conversation-sessions
+    name: 会话
+    route: /conversation/sessions
+    permission: conversation-web.session.read

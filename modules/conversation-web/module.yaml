@@ -1,0 +1,30 @@
+apiVersion: module/v1
+kind: Module
+metadata:
+  id: conversation-web
+  name: 对话前端
+  description: 对话界面：SSE 流式渲染、会话管理与降级提示
+  version: 0.1.0
+  kind: frontend
+  owner: hla-mem-core
+  maintainers:
+  - core
+compatibility:
+  host: '>=0.1.0 <1.0.0'
+entrypoints:
+  webBasePath: /conversation
+  healthPath: /internal/health
+  readinessPath: /internal/ready
+  metricsPath: /internal/metrics
+provides:
+  capabilities: []
+  events: []
+requires:
+  mandatory:
+  - host.auth.identity.v1
+  - host.config.v1
+  optional:
+  - reasoning-orchestrator.turn.process.v1
+contracts:
+  permissions: contracts/permissions.yaml
+  menu: contracts/menu.yaml

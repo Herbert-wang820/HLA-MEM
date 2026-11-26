@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hla-orchestrator"
+version = "0.1.0"
+description = "HLA-MEM reasoning orchestrator module"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115",
+  "pydantic>=2.8",
+  "hla-host>=0.1.0",
+  "uvicorn>=0.30",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "httpx>=0.27",
+  "hla-contract-kit>=0.1.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

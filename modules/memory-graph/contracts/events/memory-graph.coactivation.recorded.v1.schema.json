@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hla-mem.dev/events/memory-graph.coactivation.recorded.v1.schema.json",
+  "title": "memory-graph.coactivation.recorded.v1",
+  "$comment": "Envelope fields are checked by schemas/event-envelope.schema.json; this schema constrains type + data.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "data"
+  ],
+  "properties": {
+    "type": {
+      "const": "memory-graph.coactivation.recorded.v1"
+    },
+    "data": {
+      "$ref": "#/$defs/data"
+    }
+  },
+  "$defs": {
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "batchId",
+        "retrievalId",
+        "pairs",
+        "pairCount"
+      ],
+      "properties": {
+        "batchId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "retrievalId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "pairs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "sourceEpisodeId",
+              "targetEpisodeId",
+              "weightDelta"
+            ],
+            "properties": {
+              "sourceEpisodeId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "targetEpisodeId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "weightDelta": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          }
+        },
+        "pairCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

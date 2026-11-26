@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hla-mem.dev/schemas/event-envelope.schema.json",
+  "title": "HLA-MEM domain event envelope",
+  "description": "Matches 《模块开发契约》第 7 章 DomainEvent<T>. Event-specific schemas constrain type + data only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["specVersion", "id", "type", "source", "subject", "time", "tenantId", "dataVersion", "data"],
+  "properties": {
+    "specVersion": {"const": "1.0"},
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique event id; consumers deduplicate on it."
+    },
+    "type": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9]*\\.[a-z][a-z0-9-]*\\.v(0|[1-9][0-9]*)$"
+    },
+    "source": {"type": "string", "minLength": 1, "description": "Publishing module id."},
+    "subject": {"type": "string", "minLength": 1, "description": "Aggregate/subject id, not sensitive content."},
+    "time": {"type": "string", "format": "date-time"},
+    "tenantId": {"type": "string", "minLength": 1},
+    "correlationId": {"type": "string", "minLength": 1},
+    "causationId": {"type": "string", "minLength": 1},
+    "dataVersion": {"type": "integer", "minimum": 1},
+    "data": {"type": "object"}
+  }
+}

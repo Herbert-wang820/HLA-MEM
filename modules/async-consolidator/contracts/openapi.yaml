@@ -1,0 +1,1037 @@
+openapi: 3.1.0
+info:
+  title: HLA-MEM 异步巩固器
+  description: 巩固作业队列、重试/死信、边权强化与枢纽蒸馏
+  version: 0.1.0
+paths:
+  /internal/health:
+    get:
+      tags:
+      - operations
+      summary: Liveness probe
+      operationId: health_internal_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /internal/ready:
+    get:
+      tags:
+      - operations
+      summary: Readiness probe
+      operationId: ready_internal_ready_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+        '503':
+          description: A dependency or required configuration is not ready.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+  /internal/metrics:
+    get:
+      tags:
+      - operations
+      summary: Prometheus metrics
+      operationId: metrics_endpoint_internal_metrics_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            text/plain:
+              schema:
+                type: string
+  /api/async-consolidator/v1/jobs:
+    post:
+      tags:
+      - jobs
+      summary: 入队巩固作业
+      operationId: enqueue_job_api_async_consolidator_v1_jobs_post
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Stable key for this operation.
+          title: Idempotency-Key
+        description: Stable key for this operation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobCreateRequest'
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsolidationJob'
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: async-consolidator.job.enqueue.v1
+      x-permission: async-consolidator.job.create
+    get:
+      tags:
+      - jobs
+      summary: 分页查询作业
+      operationId: list_jobs_api_async_consolidator_v1_jobs_get
+      parameters:
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 512
+          - type: 'null'
+          title: Cursor
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 20
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobPage'
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: async-consolidator.job.read.v1
+      x-permission: async-consolidator.job.read
+  /api/async-consolidator/v1/jobs/{job_id}:
+    get:
+      tags:
+      - jobs
+      summary: 读取单个作业
+      operationId: read_job_api_async_consolidator_v1_jobs__job_id__get
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 64
+          title: Job Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsolidationJob'
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: async-consolidator.job.read.v1
+      x-permission: async-consolidator.job.read
+  /api/async-consolidator/v1/jobs/{job_id}/retry:
+    post:
+      tags:
+      - jobs
+      summary: 重试失败作业
+      operationId: retry_job_api_async_consolidator_v1_jobs__job_id__retry_post
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 64
+          title: Job Id
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Stable key for this operation.
+          title: Idempotency-Key
+        description: Stable key for this operation.
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsolidationJob'
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: async-consolidator.job.retry.v1
+      x-permission: async-consolidator.job.retry
+  /api/async-consolidator/v1/dead-letters:
+    get:
+      tags:
+      - jobs
+      summary: 分页查询死信
+      operationId: list_dead_letters_api_async_consolidator_v1_dead_letters_get
+      parameters:
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 512
+          - type: 'null'
+          title: Cursor
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 20
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeadLetterPage'
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: async-consolidator.deadletter.read.v1
+      x-permission: async-consolidator.deadletter.read
+  /api/async-consolidator/v1/dead-letters/{dead_letter_id}/replay:
+    post:
+      tags:
+      - jobs
+      summary: 重放死信
+      operationId: replay_dead_letter_api_async_consolidator_v1_dead_letters__dead_letter_id__replay_post
+      parameters:
+      - name: dead_letter_id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 64
+          title: Dead Letter Id
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Stable key for this operation.
+          title: Idempotency-Key
+        description: Stable key for this operation.
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReplayResult'
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: async-consolidator.deadletter.replay.v1
+      x-permission: async-consolidator.deadletter.replay
+  /internal/v1/backlog:
+    get:
+      tags:
+      - admin
+      summary: 查询积压与队列健康
+      operationId: read_backlog_internal_v1_backlog_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Backlog'
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: async-consolidator.backlog.read.v1
+      x-permission: async-consolidator.admin.read
+components:
+  schemas:
+    Backlog:
+      properties:
+        pending:
+          type: integer
+          minimum: 0.0
+          title: Pending
+        running:
+          type: integer
+          minimum: 0.0
+          title: Running
+        deadLettered:
+          type: integer
+          minimum: 0.0
+          title: Deadlettered
+        oldestPendingAgeSeconds:
+          type: number
+          minimum: 0.0
+          title: Oldestpendingageseconds
+        degraded:
+          type: boolean
+          title: Degraded
+          default: false
+      additionalProperties: false
+      type: object
+      required:
+      - pending
+      - running
+      - deadLettered
+      - oldestPendingAgeSeconds
+      title: Backlog
+    CheckResult:
+      properties:
+        name:
+          type: string
+          title: Name
+        ready:
+          type: boolean
+          title: Ready
+        detail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Detail
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      - ready
+      title: CheckResult
+    ConsolidationJob:
+      properties:
+        jobId:
+          type: string
+          title: Jobid
+        status:
+          type: string
+          enum:
+          - pending
+          - running
+          - completed
+          - failed
+          - dead_lettered
+          title: Status
+        trigger:
+          type: string
+          enum:
+          - turn
+          - schedule
+          - manual
+          title: Trigger
+        attempts:
+          type: integer
+          minimum: 0.0
+          title: Attempts
+          default: 0
+        maxAttempts:
+          type: integer
+          minimum: 1.0
+          title: Maxattempts
+        createdAt:
+          type: string
+          format: date-time
+          title: Createdat
+        startedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Startedat
+        completedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Completedat
+        lastError:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Lasterror
+      additionalProperties: false
+      type: object
+      required:
+      - jobId
+      - status
+      - trigger
+      - maxAttempts
+      - createdAt
+      title: ConsolidationJob
+    DeadLetter:
+      properties:
+        deadLetterId:
+          type: string
+          title: Deadletterid
+        jobId:
+          type: string
+          title: Jobid
+        reason:
+          type: string
+          title: Reason
+        attempts:
+          type: integer
+          minimum: 0.0
+          title: Attempts
+        createdAt:
+          type: string
+          format: date-time
+          title: Createdat
+        replayed:
+          type: boolean
+          title: Replayed
+          default: false
+      additionalProperties: false
+      type: object
+      required:
+      - deadLetterId
+      - jobId
+      - reason
+      - attempts
+      - createdAt
+      title: DeadLetter
+    DeadLetterPage:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/DeadLetter'
+          type: array
+          title: Items
+        nextCursor:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Nextcursor
+        hasMore:
+          type: boolean
+          title: Hasmore
+          default: false
+      additionalProperties: false
+      type: object
+      required:
+      - items
+      title: DeadLetterPage
+    ErrorResponse:
+      properties:
+        code:
+          type: string
+          pattern: ^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+$
+          title: Code
+        message:
+          type: string
+          title: Message
+        requestId:
+          type: string
+          title: Requestid
+        details:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Details
+      additionalProperties: false
+      type: object
+      required:
+      - code
+      - message
+      - requestId
+      title: ErrorResponse
+    HealthResponse:
+      properties:
+        status:
+          type: string
+          const: ok
+          title: Status
+          default: ok
+        module:
+          type: string
+          title: Module
+        version:
+          type: string
+          title: Version
+        time:
+          type: string
+          format: date-time
+          title: Time
+      additionalProperties: false
+      type: object
+      required:
+      - module
+      - version
+      - time
+      title: HealthResponse
+    JobCreateRequest:
+      properties:
+        trigger:
+          type: string
+          enum:
+          - turn
+          - schedule
+          - manual
+          title: Trigger
+        sessionId:
+          anyOf:
+          - type: string
+            maxLength: 128
+          - type: 'null'
+          title: Sessionid
+        episodeIds:
+          items:
+            type: string
+          type: array
+          maxItems: 500
+          title: Episodeids
+        priority:
+          type: integer
+          maximum: 10.0
+          minimum: -10.0
+          title: Priority
+          default: 0
+        scheduledFor:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Scheduledfor
+      additionalProperties: false
+      type: object
+      required:
+      - trigger
+      title: JobCreateRequest
+    JobPage:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ConsolidationJob'
+          type: array
+          title: Items
+        nextCursor:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Nextcursor
+        hasMore:
+          type: boolean
+          title: Hasmore
+          default: false
+      additionalProperties: false
+      type: object
+      required:
+      - items
+      title: JobPage
+    ReadinessResponse:
+      properties:
+        status:
+          type: string
+          enum:
+          - ready
+          - not_ready
+          title: Status
+        module:
+          type: string
+          title: Module
+        checks:
+          items:
+            $ref: '#/components/schemas/CheckResult'
+          type: array
+          title: Checks
+        time:
+          type: string
+          format: date-time
+          title: Time
+      additionalProperties: false
+      type: object
+      required:
+      - status
+      - module
+      - checks
+      - time
+      title: ReadinessResponse
+    ReplayResult:
+      properties:
+        deadLetterId:
+          type: string
+          title: Deadletterid
+        jobId:
+          type: string
+          title: Jobid
+        accepted:
+          type: boolean
+          title: Accepted
+      additionalProperties: false
+      type: object
+      required:
+      - deadLetterId
+      - jobId
+      - accepted
+      title: ReplayResult

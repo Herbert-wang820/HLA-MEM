@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hla-mem.dev/events/async-consolidator.job.failed.v1.schema.json",
+  "title": "async-consolidator.job.failed.v1",
+  "$comment": "Envelope fields are checked by schemas/event-envelope.schema.json; this schema constrains type + data.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "data"
+  ],
+  "properties": {
+    "type": {
+      "const": "async-consolidator.job.failed.v1"
+    },
+    "data": {
+      "$ref": "#/$defs/data"
+    }
+  },
+  "$defs": {
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "jobId",
+        "jobType",
+        "attempts",
+        "errorCode",
+        "retryable"
+      ],
+      "properties": {
+        "jobId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "jobType": {
+          "type": "string",
+          "enum": [
+            "coactivation",
+            "forgetting",
+            "hub_distillation",
+            "adaptation",
+            "proposal"
+          ]
+        },
+        "attempts": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "errorCode": {
+          "type": "string"
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

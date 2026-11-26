@@ -1,0 +1,10 @@
+apiVersion: permissions/v1
+kind: PermissionSet
+module: conversation-web
+permissions:
+- id: conversation-web.chat.use
+  description: 使用对话界面
+  kind: write
+- id: conversation-web.session.read
+  description: 读取自己的会话列表
+  kind: query

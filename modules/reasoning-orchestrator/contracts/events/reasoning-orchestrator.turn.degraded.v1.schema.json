@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hla-mem.dev/events/reasoning-orchestrator.turn.degraded.v1.schema.json",
+  "title": "reasoning-orchestrator.turn.degraded.v1",
+  "$comment": "Envelope fields are checked by schemas/event-envelope.schema.json; this schema constrains type + data.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "data"
+  ],
+  "properties": {
+    "type": {
+      "const": "reasoning-orchestrator.turn.degraded.v1"
+    },
+    "data": {
+      "$ref": "#/$defs/data"
+    }
+  },
+  "$defs": {
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "turnId",
+        "reasons"
+      ],
+      "properties": {
+        "turnId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

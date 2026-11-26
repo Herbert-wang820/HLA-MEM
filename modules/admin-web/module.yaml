@@ -1,0 +1,39 @@
+apiVersion: module/v1
+kind: Module
+metadata:
+  id: admin-web
+  name: 管理前端
+  description: 管理界面：人格编辑器、记忆图、检索审计、巩固监控与提案审批
+  version: 0.1.0
+  kind: frontend
+  owner: hla-mem-core
+  maintainers:
+  - core
+compatibility:
+  host: '>=0.1.0 <1.0.0'
+entrypoints:
+  webBasePath: /admin
+  healthPath: /internal/health
+  readinessPath: /internal/ready
+  metricsPath: /internal/metrics
+provides:
+  capabilities: []
+  events: []
+requires:
+  mandatory:
+  - host.auth.identity.v1
+  - host.config.v1
+  optional:
+  - persona-state.identity.read.v1
+  - persona-state.identity.version.create.v1
+  - persona-state.adaptation.update.v1
+  - persona-state.proposal.review.v1
+  - memory-graph.graph.read.v1
+  - reasoning-orchestrator.audit.read.v1
+  - reasoning-orchestrator.llm.configure.v1
+  - async-consolidator.backlog.read.v1
+  - async-consolidator.deadletter.read.v1
+  - async-consolidator.deadletter.replay.v1
+contracts:
+  permissions: contracts/permissions.yaml
+  menu: contracts/menu.yaml

@@ -1,0 +1,991 @@
+openapi: 3.1.0
+info:
+  title: HLA-MEM 推理编排器
+  description: 对话回合编排、System-One 门控、记忆检索与降级路径
+  version: 0.1.0
+paths:
+  /internal/health:
+    get:
+      tags:
+      - operations
+      summary: Liveness probe
+      operationId: health_internal_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /internal/ready:
+    get:
+      tags:
+      - operations
+      summary: Readiness probe
+      operationId: ready_internal_ready_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+        '503':
+          description: A dependency or required configuration is not ready.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+  /internal/metrics:
+    get:
+      tags:
+      - operations
+      summary: Prometheus metrics
+      operationId: metrics_endpoint_internal_metrics_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            text/plain:
+              schema:
+                type: string
+  /api/reasoning-orchestrator/v1/turns:
+    post:
+      tags:
+      - turns
+      summary: 处理一个对话回合（SSE 流式）
+      operationId: process_turn_api_reasoning_orchestrator_v1_turns_post
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Stable key for this turn.
+          title: Idempotency-Key
+        description: Stable key for this turn.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TurnCreateRequest'
+      responses:
+        '200':
+          description: 'Server-sent events: token deltas, then a final done event.'
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: reasoning-orchestrator.turn.process.v1
+      x-permission: reasoning-orchestrator.turn.create
+  /api/reasoning-orchestrator/v1/turns/{turn_id}:
+    get:
+      tags:
+      - turns
+      summary: 读取回合状态
+      operationId: read_turn_api_reasoning_orchestrator_v1_turns__turn_id__get
+      parameters:
+      - name: turn_id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 64
+          title: Turn Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Turn'
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: reasoning-orchestrator.turn.read.v1
+      x-permission: reasoning-orchestrator.turn.read
+  /api/reasoning-orchestrator/v1/audits/{turn_id}:
+    get:
+      tags:
+      - turns
+      summary: 读取回合的门控与检索审计
+      operationId: read_audit_api_reasoning_orchestrator_v1_audits__turn_id__get
+      parameters:
+      - name: turn_id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 64
+          title: Turn Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TurnAudit'
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: reasoning-orchestrator.audit.read.v1
+      x-permission: reasoning-orchestrator.audit.read
+  /internal/v1/gate/config:
+    put:
+      tags:
+      - admin
+      summary: 更新门控阈值与校准参数
+      operationId: update_gate_config_internal_v1_gate_config_put
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GateConfigUpdate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GateConfig'
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: reasoning-orchestrator.gate.configure.v1
+      x-permission: reasoning-orchestrator.admin.write
+  /internal/v1/llm/config:
+    get:
+      tags:
+      - admin
+      summary: 读取大模型配置（不返回密钥）
+      operationId: read_llm_config_internal_v1_llm_config_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LLMConfigView'
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: reasoning-orchestrator.llm.configure.v1
+      x-permission: reasoning-orchestrator.admin.write
+    put:
+      tags:
+      - admin
+      summary: 保存大模型配置（密钥只写不读）
+      operationId: update_llm_config_internal_v1_llm_config_put
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LLMConfigUpdate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LLMConfigView'
+        '400':
+          description: Request is structurally valid but semantically invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated but not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found or not visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Request body exceeds the configured limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error; no internal details are exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Capability is declared by contract but not implemented yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dependency unavailable and no safe degradation is possible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request exceeded the configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-capability: reasoning-orchestrator.llm.configure.v1
+      x-permission: reasoning-orchestrator.admin.write
+components:
+  schemas:
+    CheckResult:
+      properties:
+        name:
+          type: string
+          title: Name
+        ready:
+          type: boolean
+          title: Ready
+        detail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Detail
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      - ready
+      title: CheckResult
+    Degradation:
+      properties:
+        memoryDegraded:
+          type: boolean
+          title: Memorydegraded
+          default: false
+        personaDegraded:
+          type: boolean
+          title: Personadegraded
+          default: false
+        llmDegraded:
+          type: boolean
+          title: Llmdegraded
+          default: false
+        reasons:
+          items:
+            type: string
+          type: array
+          title: Reasons
+      additionalProperties: false
+      type: object
+      title: Degradation
+    ErrorResponse:
+      properties:
+        code:
+          type: string
+          pattern: ^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+$
+          title: Code
+        message:
+          type: string
+          title: Message
+        requestId:
+          type: string
+          title: Requestid
+        details:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Details
+      additionalProperties: false
+      type: object
+      required:
+      - code
+      - message
+      - requestId
+      title: ErrorResponse
+    GateConfig:
+      properties:
+        tau:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Tau
+        beta:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Beta
+        topK:
+          type: integer
+          maximum: 50.0
+          minimum: 1.0
+          title: Topk
+        calibrator:
+          type: string
+          enum:
+          - identity
+          - isotonic
+          - platt
+          title: Calibrator
+          default: identity
+        updatedAt:
+          type: string
+          format: date-time
+          title: Updatedat
+      additionalProperties: false
+      type: object
+      required:
+      - tau
+      - beta
+      - topK
+      - updatedAt
+      title: GateConfig
+    GateConfigUpdate:
+      properties:
+        tau:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Tau
+        beta:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Beta
+        topK:
+          type: integer
+          maximum: 50.0
+          minimum: 1.0
+          title: Topk
+        calibrator:
+          type: string
+          enum:
+          - identity
+          - isotonic
+          - platt
+          title: Calibrator
+          default: identity
+        expectedVersion:
+          anyOf:
+          - type: integer
+            minimum: 1.0
+          - type: 'null'
+          title: Expectedversion
+      additionalProperties: false
+      type: object
+      required:
+      - tau
+      - beta
+      - topK
+      title: GateConfigUpdate
+    HealthResponse:
+      properties:
+        status:
+          type: string
+          const: ok
+          title: Status
+          default: ok
+        module:
+          type: string
+          title: Module
+        version:
+          type: string
+          title: Version
+        time:
+          type: string
+          format: date-time
+          title: Time
+      additionalProperties: false
+      type: object
+      required:
+      - module
+      - version
+      - time
+      title: HealthResponse
+    LLMConfigUpdate:
+      properties:
+        enabled:
+          type: boolean
+          title: Enabled
+          default: false
+        baseUrl:
+          type: string
+          maxLength: 500
+          title: Baseurl
+          default: https://api.openai.com/v1
+        model:
+          type: string
+          maxLength: 200
+          title: Model
+          default: gpt-4o-mini
+        apiKey:
+          anyOf:
+          - type: string
+            maxLength: 4096
+          - type: 'null'
+          title: Apikey
+        temperature:
+          type: number
+          maximum: 2.0
+          minimum: 0.0
+          title: Temperature
+          default: 0.7
+        maxTokens:
+          type: integer
+          maximum: 8192.0
+          minimum: 1.0
+          title: Maxtokens
+          default: 512
+      additionalProperties: false
+      type: object
+      title: LLMConfigUpdate
+    LLMConfigView:
+      properties:
+        enabled:
+          type: boolean
+          title: Enabled
+        baseUrl:
+          type: string
+          title: Baseurl
+        model:
+          type: string
+          title: Model
+        apiKeySet:
+          type: boolean
+          title: Apikeyset
+        temperature:
+          type: number
+          maximum: 2.0
+          minimum: 0.0
+          title: Temperature
+        maxTokens:
+          type: integer
+          maximum: 8192.0
+          minimum: 1.0
+          title: Maxtokens
+        updatedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Updatedat
+      additionalProperties: false
+      type: object
+      required:
+      - enabled
+      - baseUrl
+      - model
+      - apiKeySet
+      - temperature
+      - maxTokens
+      title: LLMConfigView
+    ReadinessResponse:
+      properties:
+        status:
+          type: string
+          enum:
+          - ready
+          - not_ready
+          title: Status
+        module:
+          type: string
+          title: Module
+        checks:
+          items:
+            $ref: '#/components/schemas/CheckResult'
+          type: array
+          title: Checks
+        time:
+          type: string
+          format: date-time
+          title: Time
+      additionalProperties: false
+      type: object
+      required:
+      - status
+      - module
+      - checks
+      - time
+      title: ReadinessResponse
+    Turn:
+      properties:
+        turnId:
+          type: string
+          title: Turnid
+        sessionId:
+          type: string
+          title: Sessionid
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - completed
+          - failed
+          - degraded
+          title: Status
+        createdAt:
+          type: string
+          format: date-time
+          title: Createdat
+        completedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Completedat
+        degradation:
+          $ref: '#/components/schemas/Degradation'
+        personaVersion:
+          anyOf:
+          - type: integer
+            minimum: 1.0
+          - type: 'null'
+          title: Personaversion
+        adaptationVersion:
+          anyOf:
+          - type: integer
+            minimum: 1.0
+          - type: 'null'
+          title: Adaptationversion
+        identityProposalId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Identityproposalid
+      additionalProperties: false
+      type: object
+      required:
+      - turnId
+      - sessionId
+      - status
+      - createdAt
+      title: Turn
+    TurnAudit:
+      properties:
+        turnId:
+          type: string
+          title: Turnid
+        retrievalIds:
+          items:
+            type: string
+          type: array
+          title: Retrievalids
+        gateScore:
+          anyOf:
+          - type: number
+            maximum: 1.0
+            minimum: 0.0
+          - type: 'null'
+          title: Gatescore
+        gateThreshold:
+          anyOf:
+          - type: number
+            maximum: 1.0
+            minimum: 0.0
+          - type: 'null'
+          title: Gatethreshold
+        candidatesConsidered:
+          type: integer
+          maximum: 50.0
+          minimum: 0.0
+          title: Candidatesconsidered
+          default: 0
+        usedEpisodeIds:
+          items:
+            type: string
+          type: array
+          title: Usedepisodeids
+        latencyMs:
+          type: number
+          minimum: 0.0
+          title: Latencyms
+          default: 0.0
+        degraded:
+          type: boolean
+          title: Degraded
+          default: false
+        degradationReasons:
+          items:
+            type: string
+          type: array
+          title: Degradationreasons
+      additionalProperties: false
+      type: object
+      required:
+      - turnId
+      title: TurnAudit
+    TurnCreateRequest:
+      properties:
+        sessionId:
+          type: string
+          maxLength: 128
+          minLength: 1
+          title: Sessionid
+        message:
+          type: string
+          maxLength: 8000
+          minLength: 1
+          title: Message
+        stream:
+          type: boolean
+          title: Stream
+          default: true
+        clientTimezone:
+          anyOf:
+          - type: string
+            maxLength: 64
+          - type: 'null'
+          title: Clienttimezone
+      additionalProperties: false
+      type: object
+      required:
+      - sessionId
+      - message
+      title: TurnCreateRequest

@@ -1,0 +1,22 @@
+apiVersion: permissions/v1
+kind: PermissionSet
+module: async-consolidator
+permissions:
+- id: async-consolidator.job.create
+  description: 入队巩固作业
+  kind: write
+- id: async-consolidator.job.read
+  description: 查询巩固作业状态
+  kind: query
+- id: async-consolidator.job.retry
+  description: 重试失败作业
+  kind: write
+- id: async-consolidator.deadletter.read
+  description: 查询死信
+  kind: query
+- id: async-consolidator.deadletter.replay
+  description: 重放死信
+  kind: write
+- id: async-consolidator.admin.read
+  description: 查询巩固积压与队列健康
+  kind: admin

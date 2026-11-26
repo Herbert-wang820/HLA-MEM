@@ -1,0 +1,41 @@
+apiVersion: module/v1
+kind: Module
+metadata:
+  id: memory-graph
+  name: 记忆图
+  description: 情景与概念图存储、双路径检索、共激活事件与检索审计
+  version: 0.1.0
+  kind: backend
+  owner: hla-mem-core
+  maintainers:
+  - core
+compatibility:
+  host: '>=0.1.0 <1.0.0'
+entrypoints:
+  apiBasePath: /api/memory-graph/v1
+  healthPath: /internal/health
+  readinessPath: /internal/ready
+  metricsPath: /internal/metrics
+provides:
+  capabilities:
+  - memory-graph.episode.write.v1
+  - memory-graph.episode.read.v1
+  - memory-graph.episode.retract.v1
+  - memory-graph.episode.retrieve.v1
+  - memory-graph.retrieval.read.v1
+  - memory-graph.consolidation.apply.v1
+  - memory-graph.graph.read.v1
+  events:
+  - memory-graph.episode.written.v1
+  - memory-graph.episode.retracted.v1
+  - memory-graph.coactivation.recorded.v1
+requires:
+  mandatory:
+  - host.auth.identity.v1
+  - host.config.v1
+  - host.event.bus.v1
+  optional: []
+contracts:
+  openapi: contracts/openapi.yaml
+  events: contracts/events
+  permissions: contracts/permissions.yaml

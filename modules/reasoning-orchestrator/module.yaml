@@ -1,0 +1,47 @@
+apiVersion: module/v1
+kind: Module
+metadata:
+  id: reasoning-orchestrator
+  name: 推理编排器
+  description: System-One 门控、检索预算、轻量重排序、提示组装与 SSE 回合审计
+  version: 0.1.0
+  kind: backend
+  owner: hla-mem-core
+  maintainers:
+  - core
+compatibility:
+  host: '>=0.1.0 <1.0.0'
+entrypoints:
+  apiBasePath: /api/reasoning-orchestrator/v1
+  healthPath: /internal/health
+  readinessPath: /internal/ready
+  metricsPath: /internal/metrics
+provides:
+  capabilities:
+  - reasoning-orchestrator.turn.process.v1
+  - reasoning-orchestrator.turn.read.v1
+  - reasoning-orchestrator.audit.read.v1
+  - reasoning-orchestrator.gate.configure.v1
+  - reasoning-orchestrator.llm.configure.v1
+  events:
+  - reasoning-orchestrator.turn.processed.v1
+  - reasoning-orchestrator.turn.degraded.v1
+requires:
+  mandatory:
+  - host.auth.identity.v1
+  - host.config.v1
+  - host.event.bus.v1
+  optional:
+  - memory-graph.episode.retrieve.v1
+  - memory-graph.retrieval.read.v1
+  - memory-graph.episode.write.v1
+  - persona-state.identity.read.v1
+  - persona-state.adaptation.read.v1
+  - persona-state.adaptation.update.v1
+  - persona-state.proposal.create.v1
+  - async-consolidator.job.enqueue.v1
+contracts:
+  openapi: contracts/openapi.yaml
+  events: contracts/events
+  permissions: contracts/permissions.yaml
+  personaActions: contracts/persona-actions.v1.yaml

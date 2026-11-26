@@ -1,0 +1,57 @@
+name: hla-mem
+
+# Phase 0 only provisions the external dependencies.  Backend modules run from
+# the host (`make run-MODULE`) until container images are added in Phase 1.
+services:
+  falkordb:
+    image: falkordb/falkordb:latest
+    # Pin a digest before production use; `latest` is for local bring-up only.
+    ports:
+      - "${HLA_FALKORDB_PORT:-6379}:6379"
+    volumes:
+      - falkordb-data:/var/lib/falkordb/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  persona-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${HLA_PERSONA_DB_NAME:-persona_state}
+      POSTGRES_USER: ${HLA_PERSONA_DB_USER:-persona_state}
+      POSTGRES_PASSWORD: ${HLA_PERSONA_DB_PASSWORD:-persona_state}
+    ports:
+      - "${HLA_PERSONA_DB_PORT:-5432}:5432"
+    volumes:
+      - persona-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  consolidator-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${HLA_CONSOLIDATOR_DB_NAME:-consolidator}
+      POSTGRES_USER: ${HLA_CONSOLIDATOR_DB_USER:-consolidator}
+      POSTGRES_PASSWORD: ${HLA_CONSOLIDATOR_DB_PASSWORD:-consolidator}
+    ports:
+      - "${HLA_CONSOLIDATOR_DB_PORT:-5433}:5432"
+    volumes:
+      - consolidator-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  falkordb-data:
+  persona-db-data:
+  consolidator-db-data:

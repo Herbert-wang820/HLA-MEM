@@ -1,0 +1,115 @@
+apiVersion: persona-actions/v1
+kind: PersonaActionContract
+module: reasoning-orchestrator
+version: 1
+description: >-
+  模型在对话回复内修改人格的唯一受支持通道。编排器在把文本发给用户之前剥离标记；
+  适应层调用 persona-state.adaptation.update.v1（有界、乐观锁）；身份层只能调用
+  persona-state.proposal.create.v1 生成提案，绝不直接写身份版本。
+transport:
+  format: hidden-tags-in-assistant-text
+  stripBeforeStreaming: true
+  maxMarkersPerTurn: 1
+  maxMarkerJsonBytes: 20000
+limits:
+  adaptation:
+    maxDimensionsPerTurn: 4
+    maxAbsDelta: 0.15
+    maxWindowDrift: 0.30
+    windowHours: 24
+  identity:
+    maxTraits: 64
+    maxTraitLength: 64
+    maxValueLength: 512
+    maxNarrativeLength: 8000
+    maxEvidenceEpisodeIds: 50
+actions:
+- name: adaptation.update
+  tag: persona_update
+  capability: persona-state.adaptation.update.v1
+  permission: persona-state.adaptation.write
+  effect: direct
+  payload:
+    type: object
+    additionalProperties: false
+    required: [deltas, reason]
+    properties:
+      deltas:
+        type: object
+        minProperties: 1
+        maxProperties: 4
+        additionalProperties:
+          type: number
+          minimum: -0.15
+          maximum: 0.15
+      reason:
+        type: string
+        minLength: 1
+        maxLength: 200
+  example: '<persona_update>{"deltas":{"warmth":0.1},"reason":"用户希望语气更温暖"}</persona_update>'
+- name: identity.propose
+  tag: persona_proposal
+  capability: persona-state.proposal.create.v1
+  permission: persona-state.proposal.create
+  effect: requires-review
+  payload:
+    type: object
+    additionalProperties: false
+    required: [rationale, changes]
+    properties:
+      rationale:
+        type: string
+        minLength: 1
+        maxLength: 2000
+      changes:
+        type: object
+        additionalProperties: false
+        required: [traits]
+        properties:
+          traits:
+            type: array
+            minItems: 1
+            maxItems: 64
+            items:
+              type: object
+              additionalProperties: false
+              required: [trait, value, confidence]
+              properties:
+                trait:
+                  type: string
+                  minLength: 1
+                  maxLength: 64
+                value:
+                  type: string
+                  minLength: 1
+                  maxLength: 512
+                confidence:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+          narrative:
+            type: string
+            maxLength: 8000
+      evidenceEpisodeIds:
+        type: array
+        maxItems: 50
+        items:
+          type: string
+        default: []
+  example: >-
+    <persona_proposal>{"rationale":"用户多次希望更直接","changes":{"traits":[{"trait":"directness","value":"直接指出不确定","confidence":0.9}],"narrative":"你是一位直接、务实的长期对话伙伴。"},"evidenceEpisodeIds":[]}</persona_proposal>
+rules:
+- 每轮回复最多一个标记；标记不得出现在给用户的可见文本中。
+- 适应层单维 |delta| ≤ 0.15，单轮最多 4 维；超出由 persona-state 拒绝，编排器标记 PERSONA_UPDATE_REJECTED 而不静默截断。
+- 身份层必须提交完整快照；提案审批前不产生新身份版本。
+- persona-state 不可用时，标记仍被剥离并标记 PERSONA_UNAVAILABLE；禁止用默认人格伪装成功。
+- 不记录提案或人格原文到日志、事件、指标；事件只携带 ID、版本与状态。
+outcomes:
+- marker: none
+  result: 人格不变
+- marker: persona_update
+  result: adaptation.version + 1，SSE done.persona.adaptationVersion 返回新版本
+- marker: persona_proposal
+  result: 返回 proposalId，SSE done.persona.identityProposalId 返回该 ID；管理员审批后才生成身份版本
+- marker: rejected-or-invalid
+  result: 标记被剥离，回合标记 degraded 并附稳定原因码

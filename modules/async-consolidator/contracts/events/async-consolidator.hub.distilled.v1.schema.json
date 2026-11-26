@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hla-mem.dev/events/async-consolidator.hub.distilled.v1.schema.json",
+  "title": "async-consolidator.hub.distilled.v1",
+  "$comment": "Envelope fields are checked by schemas/event-envelope.schema.json; this schema constrains type + data.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "data"
+  ],
+  "properties": {
+    "type": {
+      "const": "async-consolidator.hub.distilled.v1"
+    },
+    "data": {
+      "$ref": "#/$defs/data"
+    }
+  },
+  "$defs": {
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hubId",
+        "clusterId",
+        "memberCount"
+      ],
+      "properties": {
+        "hubId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "clusterId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "memberCount": {
+          "type": "integer",
+          "minimum": 2
+        }
+      }
+    }
+  }
+}

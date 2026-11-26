@@ -1,0 +1,40 @@
+apiVersion: permissions/v1
+kind: PermissionSet
+module: persona-state
+permissions:
+- id: persona-state.identity.read
+  description: 读取身份层与只读身份摘要
+  kind: query
+- id: persona-state.identity.write
+  description: 创建新的身份层版本
+  kind: write
+- id: persona-state.identity.rollback
+  description: 回滚身份层到历史版本
+  kind: write
+- id: persona-state.adaptation.read
+  description: 读取适应层
+  kind: query
+- id: persona-state.adaptation.write
+  description: 有界更新适应层
+  kind: write
+- id: persona-state.proposal.create
+  description: 创建身份变更提案
+  kind: write
+- id: persona-state.proposal.read
+  description: 读取身份变更提案
+  kind: query
+- id: persona-state.proposal.review
+  description: 审批或拒绝身份变更提案
+  kind: write
+- id: persona-state.experience.append
+  description: 追加经历日志
+  kind: write
+- id: persona-state.experience.read
+  description: 读取经历时间线
+  kind: query
+- id: persona-state.admin.read
+  description: 人格管理端只读操作
+  kind: admin
+- id: persona-state.admin.write
+  description: 人格管理端写入操作
+  kind: admin

@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hla-mem.dev/schemas/module.schema.json",
+  "title": "HLA-MEM module manifest",
+  "description": "Schema for modules/{module-id}/module.yaml. Unknown fields are rejected on purpose.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "compatibility", "entrypoints", "provides", "requires", "contracts"],
+  "properties": {
+    "apiVersion": {"const": "module/v1"},
+    "kind": {"const": "Module"},
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "description", "version", "kind", "owner", "maintainers"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,62}$",
+          "description": "Globally unique module id; never changes after release."
+        },
+        "name": {"type": "string", "minLength": 1, "maxLength": 64},
+        "description": {"type": "string", "minLength": 8, "maxLength": 300},
+        "version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "description": "Semantic version of the module."
+        },
+        "kind": {
+          "enum": ["backend", "frontend"],
+          "description": "HLA-MEM extension: backend exposes an API; frontend exposes a web entry."
+        },
+        "owner": {"type": "string", "minLength": 1},
+        "maintainers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host"],
+      "properties": {
+        "host": {
+          "type": "string",
+          "pattern": "^>=?[0-9]+\\.[0-9]+\\.[0-9]+ <[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Inclusive lower bound, exclusive upper bound, e.g. >=0.1.0 <1.0.0."
+        }
+      }
+    },
+    "entrypoints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["healthPath", "readinessPath", "metricsPath"],
+      "properties": {
+        "apiBasePath": {
+          "type": "string",
+          "pattern": "^/api/[a-z][a-z0-9-]*/v[0-9]+$"
+        },
+        "webBasePath": {
+          "type": "string",
+          "pattern": "^/[a-z][a-z0-9/-]*$",
+          "description": "HLA-MEM extension for frontend modules, e.g. /conversation."
+        },
+        "healthPath": {"const": "/internal/health"},
+        "readinessPath": {"const": "/internal/ready"},
+        "metricsPath": {"const": "/internal/metrics"}
+      },
+      "anyOf": [{"required": ["apiBasePath"]}, {"required": ["webBasePath"]}]
+    },
+    "provides": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capabilities", "events"],
+      "properties": {
+        "capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/capability"}
+        },
+        "events": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/eventType"}
+        }
+      }
+    },
+    "requires": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mandatory", "optional"],
+      "properties": {
+        "mandatory": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/capability"},
+          "description": "Host-provided capabilities only."
+        },
+        "optional": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/capability"}
+        }
+      }
+    },
+    "contracts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["permissions"],
+      "properties": {
+        "openapi": {"type": "string", "minLength": 1},
+        "events": {"type": "string", "minLength": 1},
+        "permissions": {"type": "string", "minLength": 1},
+        "menu": {"type": "string", "minLength": 1},
+        "personaActions": {"type": "string", "minLength": 1}
+      }
+    }
+  },
+  "$defs": {
+    "capability": {
+      "type": "string",
+      "pattern": "^(?:host\\.[a-z][a-z0-9]*\\.v(0|[1-9][0-9]*)|[a-z][a-z0-9-]*\\.[a-z][a-z0-9]*\\.(?:[a-z][a-z0-9]*\\.)+v(0|[1-9][0-9]*))$"
+    },
+    "eventType": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9]*\\.[a-z][a-z0-9-]*\\.v(0|[1-9][0-9]*)$"
+    },
+    "permission": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9]*\\.[a-z][a-z0-9]*$"
+    }
+  }
+}

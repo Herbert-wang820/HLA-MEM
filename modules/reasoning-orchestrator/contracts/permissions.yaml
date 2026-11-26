@@ -1,0 +1,19 @@
+apiVersion: permissions/v1
+kind: PermissionSet
+module: reasoning-orchestrator
+permissions:
+- id: reasoning-orchestrator.turn.create
+  description: 创建并处理对话回合
+  kind: write
+- id: reasoning-orchestrator.turn.read
+  description: 读取回合状态与结果
+  kind: query
+- id: reasoning-orchestrator.audit.read
+  description: 读取回合检索审计
+  kind: query
+- id: reasoning-orchestrator.admin.read
+  description: 编排器管理端只读操作
+  kind: admin
+- id: reasoning-orchestrator.admin.write
+  description: 配置门控阈值与校准参数
+  kind: admin

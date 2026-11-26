@@ -1,0 +1,25 @@
+apiVersion: permissions/v1
+kind: PermissionSet
+module: admin-web
+permissions:
+- id: admin-web.persona.view
+  description: 查看人格编辑器
+  kind: query
+- id: admin-web.persona.edit
+  description: 编辑人格（仍需人格模块后端授权）
+  kind: write
+- id: admin-web.memory.view
+  description: 查看记忆图浏览器
+  kind: query
+- id: admin-web.audit.view
+  description: 查看检索审计
+  kind: query
+- id: admin-web.consolidation.view
+  description: 查看巩固监控
+  kind: query
+- id: admin-web.proposal.review
+  description: 进入身份变更提案审批
+  kind: write
+- id: admin-web.llm.manage
+  description: 配置并保存大模型连接参数
+  kind: write
